@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { auth } from "../../firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { 
-  Container, Paper, TextField, Button, Typography, Box, Alert, CircularProgress 
+  Container, Paper, TextField, Button, Box, Alert, CircularProgress 
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
