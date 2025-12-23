@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { auth } from "./firebase";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import Home from "./pages/Home";
-import Login from "./pages/Home/Login";
+import Login from "./pages/Home/Login"; 
 import { CircularProgress, Box } from "@mui/material";
 
 export default function App() {
@@ -11,7 +11,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Esta função observa a mudança de estado (Login/Logout) em tempo real
+    // O onAuthStateChanged é essencial para evitar o erro 403 de permissão
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
@@ -19,6 +19,7 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
+  // O loading impede o erro "removeChild" no React durante a troca de telas
   if (loading) {
     return (
       <Box sx={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center' }}>
@@ -30,19 +31,14 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Se não houver usuário, obriga a ir para /login */}
         <Route 
           path="/login" 
           element={!user ? <Login /> : <Navigate to="/" replace />} 
         />
-        
-        {/* Se houver usuário, mostra a Home. Se não, manda para /login */}
         <Route 
           path="/" 
           element={user ? <Home /> : <Navigate to="/login" replace />} 
         />
-
-        {/* Rota de segurança para qualquer endereço errado */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
