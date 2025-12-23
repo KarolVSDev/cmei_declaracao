@@ -5,7 +5,7 @@ import {
   Modal, Box, TextField, Button, MenuItem, Grid 
 } from "@mui/material";
 import { 
-  Search, Save, PictureAsPdf, CheckCircle, Edit, Delete 
+  Save, PictureAsPdf, CheckCircle, Edit, Delete 
 } from "@mui/icons-material";
 import { 
   buscarAlunos, salvarDeclaracao, buscarDeclaracoesPorMes, editarAluno, excluirAluno 
@@ -35,7 +35,6 @@ export const ListagemAlunos = () => {
   const [modalEdit, setModalEdit] = useState(false);
   const [alunoSelecionado, setAlunoSelecionado] = useState<Aluno | null>(null);
   
-  // Alterado para focar em faltas
   const [dadosFreq, setDadosFreq] = useState({ dias: 20, faltas: 0 });
   const [dadosEdit, setDadosEdit] = useState<Partial<Aluno>>({});
 
@@ -52,12 +51,16 @@ export const ListagemAlunos = () => {
         return acc;
       }, {});
       setDeclaracoesMes(mapeado);
+    } catch (error) {
+      console.error("Erro ao carregar dados:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { carregarDados(); }, [mesAtual]);
+  useEffect(() => { 
+    carregarDados(); 
+  }, [mesAtual]);
 
   const handleExcluir = async (id: string) => {
     if (window.confirm("Tem certeza que deseja excluir este aluno? Todos os dados serão perdidos.")) {
@@ -77,7 +80,6 @@ export const ListagemAlunos = () => {
   const handleSalvarFrequencia = async () => {
     if (!alunoSelecionado) return;
     
-    // Cálculo automático de presenças com base nas faltas informadas
     const presencasCalculadas = dadosFreq.dias - dadosFreq.faltas;
     const percentualCalculado = (presencasCalculadas / dadosFreq.dias) * 100;
 
@@ -104,22 +106,46 @@ export const ListagemAlunos = () => {
 
   const turmasDisponiveis = useMemo(() => ["Todas", ...Array.from(new Set(alunos.map(a => a.turma)))], [alunos]);
 
-  if (loading) return <CircularProgress sx={{ display: 'block', margin: '40px auto' }} />;
+  if (loading) return (
+    <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
+      <CircularProgress />
+    </Box>
+  );
 
   return (
     <Box sx={{ mt: 4 }}>
       <Paper sx={{ p: 2, mb: 2 }}>
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, sm: 4 }}>
-            <TextField size="small" fullWidth placeholder="Buscar pelo nome..." value={busca} onChange={(e) => setBusca(e.target.value)} InputProps={{ startAdornment: <Search /> }} />
+            <TextField 
+              size="small" 
+              fullWidth 
+              placeholder="Buscar pelo nome..." 
+              value={busca} 
+              onChange={(e) => setBusca(e.target.value)} 
+            />
           </Grid>
           <Grid size={{ xs: 6, sm: 4 }}>
-            <TextField select size="small" fullWidth label="Filtrar Turma" value={filtroTurma} onChange={(e) => setFiltroTurma(e.target.value)}>
+            <TextField 
+              select 
+              size="small" 
+              fullWidth 
+              label="Filtrar Turma" 
+              value={filtroTurma} 
+              onChange={(e) => setFiltroTurma(e.target.value)}
+            >
               {turmasDisponiveis.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
             </TextField>
           </Grid>
           <Grid size={{ xs: 6, sm: 4 }}>
-            <TextField select size="small" fullWidth label="Mês de Referência" value={mesAtual} onChange={(e) => setMesAtual(e.target.value)}>
+            <TextField 
+              select 
+              size="small" 
+              fullWidth 
+              label="Mês de Referência" 
+              value={mesAtual} 
+              onChange={(e) => setMesAtual(e.target.value)}
+            >
               {MESES.map(m => <MenuItem key={m} value={m}>{m}</MenuItem>)}
             </TextField>
           </Grid>
@@ -142,15 +168,48 @@ export const ListagemAlunos = () => {
               const freqSalva = declaracoesMes[aluno.id!];
               return (
                 <TableRow key={aluno.id} hover>
-                  <TableCell>{freqSalva ? <CheckCircle color="success" /> : <CheckCircle sx={{ color: '#eee' }} />}</TableCell>
+                  <TableCell>
+                    {freqSalva ? <CheckCircle color="success" /> : <CheckCircle sx={{ color: '#eee' }} />}
+                  </TableCell>
                   <TableCell><strong>{aluno.nome.toUpperCase()}</strong></TableCell>
                   <TableCell>{`${aluno.fase} - ${aluno.turma}`}</TableCell>
                   <TableCell>{aluno.turno}</TableCell>
                   <TableCell align="right">
-                    <Tooltip title="Lançar Faltas"><IconButton color="primary" onClick={() => { setAlunoSelecionado(aluno); setDadosFreq({ dias: freqSalva?.diasLetivos || 20, faltas: freqSalva ? (freqSalva.diasLetivos - freqSalva.presencas) : 0 }); setModalFreq(true); }}><Save /></IconButton></Tooltip>
-                    <Tooltip title="Gerar PDF Oficial"><IconButton color="error" disabled={!freqSalva} onClick={() => gerarPDFDeclaracao(aluno, { mes: mesAtual, dias: freqSalva.diasLetivos, presencas: freqSalva.presencas })}><PictureAsPdf /></IconButton></Tooltip>
-                    <Tooltip title="Editar Cadastro"><IconButton onClick={() => { setAlunoSelecionado(aluno); setDadosEdit(aluno); setModalEdit(true); }}><Edit /></IconButton></Tooltip>
-                    <Tooltip title="Excluir"><IconButton color="default" onClick={() => handleExcluir(aluno.id!)}><Delete /></IconButton></Tooltip>
+                    <Tooltip title="Lançar Faltas">
+                      <IconButton color="primary" onClick={() => { 
+                        setAlunoSelecionado(aluno); 
+                        setDadosFreq({ 
+                          dias: freqSalva?.diasLetivos || 20, 
+                          faltas: freqSalva ? (freqSalva.diasLetivos - freqSalva.presencas) : 0 
+                        }); 
+                        setModalFreq(true); 
+                      }}>
+                        <Save />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Gerar PDF Oficial">
+                      <IconButton 
+                        color="error" 
+                        disabled={!freqSalva} 
+                        onClick={() => gerarPDFDeclaracao(aluno, { 
+                          mes: mesAtual, 
+                          dias: freqSalva.diasLetivos, 
+                          presencas: freqSalva.presencas 
+                        })}
+                      >
+                        <PictureAsPdf />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Editar Cadastro">
+                      <IconButton onClick={() => { setAlunoSelecionado(aluno); setDadosEdit(aluno); setModalEdit(true); }}>
+                        <Edit />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Excluir">
+                      <IconButton color="default" onClick={() => handleExcluir(aluno.id!)}>
+                        <Delete />
+                      </IconButton>
+                    </Tooltip>
                   </TableCell>
                 </TableRow>
               );
@@ -167,7 +226,14 @@ export const ListagemAlunos = () => {
             {alunoSelecionado?.nome.toUpperCase()}
           </Typography>
           
-          <TextField fullWidth label="Total de Dias Letivos" type="number" sx={{ mb: 2 }} value={dadosFreq.dias} onChange={(e) => setDadosFreq({...dadosFreq, dias: Number(e.target.value)})} />
+          <TextField 
+            fullWidth 
+            label="Total de Dias Letivos" 
+            type="number" 
+            sx={{ mb: 2 }} 
+            value={dadosFreq.dias} 
+            onChange={(e) => setDadosFreq({...dadosFreq, dias: Number(e.target.value)})} 
+          />
           
           <TextField 
             fullWidth 
@@ -176,7 +242,7 @@ export const ListagemAlunos = () => {
             sx={{ mb: 3 }} 
             value={dadosFreq.faltas} 
             onChange={(e) => setDadosFreq({...dadosFreq, faltas: Number(e.target.value)})} 
-            helperText={`O sistema calculará: ${dadosFreq.dias - dadosFreq.faltas} presenças.`}
+            helperText={`Resultado: ${dadosFreq.dias - dadosFreq.faltas} presenças.`}
           />
           
           <Button variant="contained" fullWidth onClick={handleSalvarFrequencia} sx={{ py: 1.5 }}>
