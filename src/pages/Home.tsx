@@ -73,16 +73,6 @@ export default function Home() {
           </Box>
           
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Button 
-              variant="contained" 
-              color="secondary" 
-              startIcon={<AddIcon />}
-              onClick={() => setOpenModal(true)}
-              sx={{ fontWeight: 'bold' }}
-            >
-              Novo Aluno
-            </Button>
-
             <Tooltip title="Sair do Sistema">
               <IconButton color="inherit" onClick={handleLogout}>
                 <LogoutIcon />

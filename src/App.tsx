@@ -1,3 +1,4 @@
+// src/App.tsx
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { auth } from "./firebase";
@@ -11,7 +12,6 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // O onAuthStateChanged é essencial para evitar o erro 403 de permissão
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
@@ -19,7 +19,7 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // O loading impede o erro "removeChild" no React durante a troca de telas
+  // SE VOCÊ NÃO TIVER ESTE BLOCO, O PROBLEMA VAI CONTINUAR:
   if (loading) {
     return (
       <Box sx={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center' }}>
@@ -32,13 +32,18 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route 
-          path="/login" 
-          element={!user ? <Login /> : <Navigate to="/" replace />} 
+          path="/" 
+          element={<Login />} 
         />
         <Route 
-          path="/" 
-          element={user ? <Home /> : <Navigate to="/login" replace />} 
+          path="/home" 
+          element={user ? <Home /> : <Navigate to="/" replace />} 
         />
+        <Route 
+          path="/login" 
+          element={<Navigate to="/" replace />} 
+        />
+        {/* Rota curinga para evitar caminhos inexistentes */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
