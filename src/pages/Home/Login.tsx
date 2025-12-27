@@ -22,7 +22,7 @@ export default function Login() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        navigate("/home", { replace: true });
+        navigate("/home");
       }
     });
     return unsubscribe;
@@ -35,7 +35,7 @@ export default function Login() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       // replace: true evita erros de renderização e limpa o histórico
-      navigate("/home", { replace: true }); 
+      navigate("/home"); 
     } catch (err: any) {
       setError("E-mail ou senha incorretos.");
     } finally {
