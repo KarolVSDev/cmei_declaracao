@@ -12,6 +12,7 @@ export default function ConsultaAluno() {
   const [nascimento, setNascimento] = useState("");
   const [erro, setErro] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sucesso, setSucesso] = useState("");
   const navigate = useNavigate();
 
   const handleConsulta = async (e: React.FormEvent) => {
@@ -60,7 +61,7 @@ export default function ConsultaAluno() {
           presencas: freqDados.presencas
         });
         
-        alert(`Declaração de ${alunoDados.nome} gerada com sucesso!`);
+        setSucesso(`Declaração de ${alunoDados.nome} gerada com sucesso!`);
       }
     } catch (err: any) {
       console.error(err);
@@ -87,6 +88,7 @@ export default function ConsultaAluno() {
         </Typography>
         
         {erro && <Alert severity="error" sx={{ mb: 2 }}>{erro}</Alert>}
+        {sucesso && <Alert severity="success" sx={{ mb: 2 }}>{sucesso}</Alert>}
 
         <Box component="form" onSubmit={handleConsulta}>
           <TextField 

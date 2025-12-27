@@ -41,13 +41,10 @@ export const ListagemAlunos = () => {
   const carregarDados = async () => {
     try {
       setLoading(true);
-      console.log("Carregando dados...");
       const [listaAlunos, historicoMes] = await Promise.all([
         buscarAlunos(),
         buscarDeclaracoesPorMes(mesAtual, 2025)
       ]);
-      console.log("Alunos carregados:", listaAlunos);
-      console.log("Histórico carregado:", historicoMes);
       setAlunos(listaAlunos);
       const mapeado = historicoMes.reduce((acc: any, item: any) => {
         acc[item.alunoId] = item;
