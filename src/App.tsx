@@ -32,16 +32,12 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route 
-          path="/" 
-          element={<Login />} 
-        />
-        <Route 
-          path="/home" 
-          element={user ? <Home /> : <Navigate to="/" replace />} 
-        />
-        <Route 
           path="/login" 
-          element={<Navigate to="/" replace />} 
+          element={!user ? <Login /> : <Navigate to="/" replace />} 
+        />
+        <Route 
+          path="/" 
+          element={user ? <Home /> : <Navigate to="/login" replace />} 
         />
         {/* Rota curinga para evitar caminhos inexistentes */}
         <Route path="*" element={<Navigate to="/" replace />} />

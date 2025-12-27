@@ -19,7 +19,7 @@ export default function Login() {
     setError("");
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      navigate("/home"); 
+      navigate("/"); 
     } catch (err: any) {
       setError("E-mail ou senha incorretos.");
     } finally {
