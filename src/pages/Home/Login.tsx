@@ -32,13 +32,20 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     setError("");
+    
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      // replace: true evita erros de renderização e limpa o histórico
-      navigate("/home"); 
+      // 1. Faz o login
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      
+      // 2. Pequena pausa para o Firebase estabilizar o token no navegador (Evita o erro removeChild)
+      if (userCredential.user) {
+        setTimeout(() => {
+          navigate("/home", { replace: true });
+        }, 500); // 500ms é o suficiente para o DOM estabilizar
+      }
     } catch (err: any) {
+      console.error("Erro de login:", err);
       setError("E-mail ou senha incorretos.");
-    } finally {
       setLoading(false);
     }
   };

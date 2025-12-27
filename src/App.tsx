@@ -21,7 +21,8 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // Tela de carregamento para evitar redirecionamentos errados (Erro removeChild)
+  // Tela de carregamento crucial: evita que o React tome decisões de rota
+  // antes de saber se o usuário está logado ou não.
   if (loading) {
     return (
       <Box sx={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center' }}>
@@ -32,7 +33,13 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <Routes>
+      {/* O segredo para evitar o erro "removeChild" na Vercel: 
+        Adicionamos uma 'key' dinâmica baseada no ID do usuário. 
+        Quando o usuário loga ou desloga, a key muda e o React reconstrói 
+        a árvore de rotas do zero, evitando conflitos no DOM.
+      */}
+      <Routes key={user ? user.uid : "public-area"}>
+        
         {/* 1. PORTAL DE ENTRADA: Tela de seleção (Aluno ou Secretaria) */}
         <Route 
           path="/" 
