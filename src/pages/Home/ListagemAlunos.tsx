@@ -2,10 +2,10 @@ import { useState, useEffect, useMemo } from "react";
 import { 
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, 
   Paper, Typography, CircularProgress, IconButton, Tooltip,
-  Modal, Box, TextField, Button, MenuItem, Grid 
+  Modal, Box, TextField, Button, MenuItem,  Grid 
 } from "@mui/material";
 import { 
-  Save, PictureAsPdf, CheckCircle, Edit, Delete 
+  Save, PictureAsPdf, CheckCircle, Edit, Delete, Search 
 } from "@mui/icons-material";
 import { 
   buscarAlunos, salvarDeclaracao, buscarDeclaracoesPorMes, editarAluno, excluirAluno 
@@ -122,7 +122,10 @@ export const ListagemAlunos = () => {
               fullWidth 
               placeholder="Buscar pelo nome..." 
               value={busca} 
-              onChange={(e) => setBusca(e.target.value)} 
+              onChange={(e) => setBusca(e.target.value)}
+              InputProps={{
+                startAdornment: <Search sx={{ color: 'action.active', mr: 1 }} />,
+              }}
             />
           </Grid>
           <Grid size={{ xs: 6, sm: 4 }}>
@@ -152,7 +155,7 @@ export const ListagemAlunos = () => {
         </Grid>
       </Paper>
 
-      <TableContainer component={Paper}>
+      <TableContainer component={Paper} elevation={2}>
         <Table size="small">
           <TableHead sx={{ bgcolor: "#f5f5f5" }}>
             <TableRow>
@@ -164,56 +167,64 @@ export const ListagemAlunos = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {alunosFiltrados.map((aluno) => {
-              const freqSalva = declaracoesMes[aluno.id!];
-              return (
-                <TableRow key={aluno.id} hover>
-                  <TableCell>
-                    {freqSalva ? <CheckCircle color="success" /> : <CheckCircle sx={{ color: '#eee' }} />}
-                  </TableCell>
-                  <TableCell><strong>{aluno.nome.toUpperCase()}</strong></TableCell>
-                  <TableCell>{`${aluno.fase} - ${aluno.turma}`}</TableCell>
-                  <TableCell>{aluno.turno}</TableCell>
-                  <TableCell align="right">
-                    <Tooltip title="Lançar Faltas">
-                      <IconButton color="primary" onClick={() => { 
-                        setAlunoSelecionado(aluno); 
-                        setDadosFreq({ 
-                          dias: freqSalva?.diasLetivos || 20, 
-                          faltas: freqSalva ? (freqSalva.diasLetivos - freqSalva.presencas) : 0 
-                        }); 
-                        setModalFreq(true); 
-                      }}>
-                        <Save />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Gerar PDF Oficial">
-                      <IconButton 
-                        color="error" 
-                        disabled={!freqSalva} 
-                        onClick={() => gerarPDFDeclaracao(aluno, { 
-                          mes: mesAtual, 
-                          dias: freqSalva.diasLetivos, 
-                          presencas: freqSalva.presencas 
-                        })}
-                      >
-                        <PictureAsPdf />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Editar Cadastro">
-                      <IconButton onClick={() => { setAlunoSelecionado(aluno); setDadosEdit(aluno); setModalEdit(true); }}>
-                        <Edit />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Excluir">
-                      <IconButton color="default" onClick={() => handleExcluir(aluno.id!)}>
-                        <Delete />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+            {alunosFiltrados.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} align="center" sx={{ py: 3 }}>
+                  Nenhum aluno encontrado.
+                </TableCell>
+              </TableRow>
+            ) : (
+              alunosFiltrados.map((aluno) => {
+                const freqSalva = declaracoesMes[aluno.id!];
+                return (
+                  <TableRow key={aluno.id} hover>
+                    <TableCell>
+                      {freqSalva ? <CheckCircle color="success" /> : <CheckCircle sx={{ color: '#eee' }} />}
+                    </TableCell>
+                    <TableCell><strong>{aluno.nome.toUpperCase()}</strong></TableCell>
+                    <TableCell>{`${aluno.fase} - ${aluno.turma}`}</TableCell>
+                    <TableCell>{aluno.turno}</TableCell>
+                    <TableCell align="right">
+                      <Tooltip title="Lançar Faltas">
+                        <IconButton color="primary" onClick={() => { 
+                          setAlunoSelecionado(aluno); 
+                          setDadosFreq({ 
+                            dias: freqSalva?.diasLetivos || 20, 
+                            faltas: freqSalva ? (freqSalva.diasLetivos - freqSalva.presencas) : 0 
+                          }); 
+                          setModalFreq(true); 
+                        }}>
+                          <Save />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Gerar PDF Oficial">
+                        <IconButton 
+                          color="error" 
+                          disabled={!freqSalva} 
+                          onClick={() => gerarPDFDeclaracao(aluno, { 
+                            mes: mesAtual, 
+                            dias: freqSalva.diasLetivos, 
+                            presencas: freqSalva.presencas 
+                          })}
+                        >
+                          <PictureAsPdf />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Editar Cadastro">
+                        <IconButton onClick={() => { setAlunoSelecionado(aluno); setDadosEdit(aluno); setModalEdit(true); }}>
+                          <Edit />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Excluir">
+                        <IconButton color="default" onClick={() => handleExcluir(aluno.id!)}>
+                          <Delete />
+                        </IconButton>
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
           </TableBody>
         </Table>
       </TableContainer>
@@ -253,7 +264,7 @@ export const ListagemAlunos = () => {
 
       {/* MODAL EDIÇÃO ALUNO */}
       <Modal open={modalEdit} onClose={() => setModalEdit(false)}>
-        <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 450, bgcolor: 'background.paper', p: 4, borderRadius: 2 }}>
+        <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 450, bgcolor: 'background.paper', p: 4, borderRadius: 2, boxShadow: 24 }}>
           <Typography variant="h6" gutterBottom>Editar Cadastro do Aluno</Typography>
           <Grid container spacing={2}>
             <Grid size={{ xs: 12 }}>
@@ -276,7 +287,9 @@ export const ListagemAlunos = () => {
               </TextField>
             </Grid>
             <Grid size={{ xs: 12 }}>
-              <Button variant="contained" fullWidth onClick={handleSalvarEdicao}>Atualizar Dados</Button>
+              <Button variant="contained" fullWidth onClick={handleSalvarEdicao} sx={{ mt: 1 }}>
+                Atualizar Dados
+              </Button>
             </Grid>
           </Grid>
         </Box>
