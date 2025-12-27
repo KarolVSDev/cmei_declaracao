@@ -11,6 +11,7 @@ import {
   buscarAlunos, salvarDeclaracao, buscarDeclaracoesPorMes, editarAluno, excluirAluno 
 } from "../../services/alunosService";
 import { gerarPDFDeclaracao } from "../../services/pdfService";
+import { auth } from "../../firebase";
 import type { Aluno } from "../../types/Aluno";
 
 const MESES = [
@@ -59,7 +60,10 @@ export const ListagemAlunos = () => {
   };
 
   useEffect(() => { 
-    carregarDados(); 
+    // Só dispara a busca se houver um usuário logado no Firebase
+    if (auth.currentUser) {
+      carregarDados(); 
+    }
   }, [mesAtual]);
 
   const handleExcluir = async (id: string) => {
