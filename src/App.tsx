@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { auth } from "./firebase";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import Home from "./pages/Home";
-import Login from "./pages/Home/Login"; 
+import Login from "./pages/Home/Login";
+import ConsultaAluno from "./pages/ConsultaAluno"; 
 import { CircularProgress, Box } from "@mui/material";
 
 export default function App() {
@@ -12,6 +13,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Monitora o estado de autenticação para proteger as rotas ADM
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
@@ -19,6 +21,7 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
+  // Tela de carregamento para evitar redirecionamentos errados (Erro removeChild)
   if (loading) {
     return (
       <Box sx={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center' }}>
@@ -30,18 +33,22 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Rota Raiz: decide entre Login ou Home imediatamente */}
+        {/* 1. PORTAL DE ENTRADA: Tela de seleção (Aluno ou Secretaria) */}
         <Route 
           path="/" 
           element={!user ? <Login /> : <Navigate to="/home" replace />} 
         />
-        
-        {/* Rota Home: Protegida rigorosamente */}
+
+        {/* 2. PORTAL DO ALUNO: Acesso público via CPF e Nascimento */}
+        <Route path="/consulta" element={<ConsultaAluno />} />
+
+        {/* 3. PORTAL DA SECRETARIA: Home administrativa protegida */}
         <Route 
           path="/home" 
           element={user ? <Home /> : <Navigate to="/" replace />} 
         />
 
+        {/* 4. REDIRECIONAMENTO: Qualquer rota desconhecida volta para a seleção */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

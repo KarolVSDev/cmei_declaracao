@@ -7,16 +7,19 @@ import {
 } from "@mui/material";
 import AddIcon from '@mui/icons-material/Add';
 import LogoutIcon from '@mui/icons-material/Logout'; 
+import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { auth } from "../firebase"; 
 import { signOut } from "firebase/auth";
 import { cadastrarAluno } from "../services/alunosService"; 
 import { ListagemAlunos } from "./Home/ListagemAlunos";
 import type { Aluno } from "../types/Aluno";
+import * as XLSX from "xlsx"; // Certifique-se de instalar: npm install xlsx
 
 export default function Home() {
   const [openSnack, setOpenSnack] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [openModal, setOpenModal] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const { control, handleSubmit, reset } = useForm({
     defaultValues: {
@@ -26,6 +29,7 @@ export default function Home() {
       fase: "2º Período",
       turma: "",
       turno: "Matutino",
+      cpf: "",
     },
   });
 
@@ -37,21 +41,66 @@ export default function Home() {
     }
   };
 
+  // Função para processar o Upload da Planilha
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const data = e.target?.result;
+      const workbook = XLSX.read(data, { type: "binary" });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const jsonData: any[] = XLSX.utils.sheet_to_json(sheet);
+
+      setLoading(true);
+      try {
+        for (const item of jsonData) {
+          const novoAluno: Aluno = {
+            nome: String(item.Nome || item.nome || "").toUpperCase(),
+            matricula: String(item.Matricula || item.matricula || ""),
+            dataNascimento: String(item.Nascimento || item.dataNascimento || ""),
+            cpf: String(item.CPF || item.cpf || ""),
+            fase: item.Fase || item.fase || "2º Período",
+            turma: String(item.Turma || item.turma || ""),
+            turno: item.Turno || item.turno || "Matutino",
+            status: 'ativo' as const,
+          };
+          
+          if (novoAluno.nome && novoAluno.cpf) {
+            await cadastrarAluno(novoAluno);
+          }
+        }
+        setOpenSnack(true);
+        setRefreshKey(old => old + 1);
+      } catch (error) {
+        console.error("Erro no upload:", error);
+        alert("Erro ao processar planilha. Verifique os dados.");
+      } finally {
+        setLoading(false);
+        event.target.value = ""; // Limpa o input
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
   const onSubmit = async (data: any) => {
     try {
       const novoAluno: Aluno = {
-        nome: data.alunoNome,
+        nome: data.alunoNome.toUpperCase(),
         matricula: data.matricula,
         dataNascimento: data.nascimento,
         fase: data.fase,
         turma: data.turma,
         turno: data.turno,
+        cpf: data.cpf,
         status: 'ativo' as const, 
       };
 
       await cadastrarAluno(novoAluno); 
       setOpenSnack(true);
-      setRefreshKey(old => old + 1); 
+      setRefreshKey(old => old + 1);
       setOpenModal(false);
       reset();
     } catch (error) {
@@ -63,7 +112,6 @@ export default function Home() {
     <>
       <AppBar position="static" sx={{ bgcolor: '#1976d2' }}>
         <Toolbar>
-          {/* LOGO NO LUGAR DO TEXTO */}
           <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
             <img 
               src="/logo.jpeg" 
@@ -72,7 +120,19 @@ export default function Home() {
             />
           </Box>
           
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {/* Botão de Upload de Planilha */}
+            <Button
+              variant="contained"
+              component="label"
+              startIcon={<UploadFileIcon />}
+              disabled={loading}
+              sx={{ bgcolor: '#2e7d32', '&:hover': { bgcolor: '#1b5e20' }, display: { xs: 'none', sm: 'flex' } }}
+            >
+              {loading ? "Processando..." : "Importar Planilha"}
+              <input type="file" hidden accept=".xlsx, .xls" onChange={handleFileUpload} />
+            </Button>
+
             <Tooltip title="Sair do Sistema">
               <IconButton color="inherit" onClick={handleLogout}>
                 <LogoutIcon />
@@ -113,7 +173,12 @@ export default function Home() {
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <Controller name="matricula" control={control} render={({ field }) => (
-                    <TextField {...field} label="Código do Aluno" fullWidth />
+                    <TextField {...field} label="Código do Aluno (Matrícula)" fullWidth />
+                  )} />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Controller name="cpf" control={control} render={({ field }) => (
+                    <TextField {...field} label="CPF do Aluno" fullWidth required />
                   )} />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
@@ -130,7 +195,7 @@ export default function Home() {
                     <TextField {...field} label="Turma" fullWidth />
                   )} />
                 </Grid>
-                <Grid size={{ xs: 12 }}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Controller name="turno" control={control} render={({ field }) => (
                     <TextField {...field} select label="Turno" fullWidth>
                       {["Matutino", "Vespertino", "Integral"].map((t) => (
@@ -143,14 +208,14 @@ export default function Home() {
             </DialogContent>
             <DialogActions sx={{ p: 3 }}>
               <Button onClick={() => setOpenModal(false)}>Cancelar</Button>
-              <Button type="submit" variant="contained">Salvar</Button>
+              <Button type="submit" variant="contained">Salvar Aluno</Button>
             </DialogActions>
           </Box>
         </Dialog>
       </Container>
 
       <Snackbar open={openSnack} autoHideDuration={3000} onClose={() => setOpenSnack(false)}>
-        <Alert severity="success">Cadastro realizado!</Alert>
+        <Alert severity="success" variant="filled">Dados atualizados com sucesso!</Alert>
       </Snackbar>
     </>
   );
