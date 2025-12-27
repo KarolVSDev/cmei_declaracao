@@ -8,6 +8,7 @@ export interface Aluno {
   fase: string;
   status: 'ativo' | 'egresso';
   turno: string;
+  cpf: string;
 }
 
 export interface Declarations {
